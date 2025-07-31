@@ -127,12 +127,12 @@ function ProjectLightspeed() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const scrollToTab = (tabId) => {
-    const element = document.getElementById(`tab-${tabId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
+// const scrollToTab = (tabId) => {
+//   const element = document.getElementById(`tab-${tabId}`);
+//   if (element) {
+//     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+//   }
+// };
 
   const applyFormatting = (type) => {
     // For now, just add markdown symbols
@@ -671,20 +671,28 @@ function ProjectLightspeed() {
     e.preventDefault();
     if (!draggedTab || draggedTab.id === targetTab.id) return;
     
-    // Check if moving a parent into its own child (prevent circular reference)
-    const isMovingParentIntoChild = (parentId, childId) => {
-      let currentTab = tabs.find(t => t.id === childId);
-      while (currentTab?.parentId) {
-        if (currentTab.parentId === parentId) return true;
-        currentTab = tabs.find(t => t.id === currentTab.parentId);
-      }
-      return false;
-    };
-    
-    if (isMovingParentIntoChild(draggedTab.id, targetTab.id)) {
-      alert("Cannot move a tab into its own subtab!");
-      return;
-    }
+    // ⬅️ Move this OUTSIDE of handleTabDrop
+const isMovingParentIntoChild = (parentId, childId, tabs) => {
+  let currentTab = tabs.find(t => t.id === childId);
+  while (currentTab?.parentId) {
+    if (currentTab.parentId === parentId) return true;
+    currentTab = tabs.find(t => t.id === currentTab.parentId);
+  }
+  return false;
+};
+
+// And update your handleTabDrop:
+const handleTabDrop = (e, targetTab) => {
+  e.preventDefault();
+  if (!draggedTab || draggedTab.id === targetTab.id) return;
+
+  if (isMovingParentIntoChild(draggedTab.id, targetTab.id, tabs)) {
+    alert("Cannot move a tab into its own subtab!");
+    return;
+  }
+
+  // continue logic...
+};
     
     let updatedTabs = [...tabs];
     
@@ -697,7 +705,6 @@ function ProjectLightspeed() {
       // Reorder tabs at the same level
       const targetParentId = targetTab.parentId;
       const draggedIndex = updatedTabs.findIndex(t => t.id === draggedTab.id);
-      const targetIndex = updatedTabs.findIndex(t => t.id === targetTab.id);
       
       // First update the dragged tab's parent
       updatedTabs[draggedIndex] = { ...updatedTabs[draggedIndex], parentId: targetParentId };
